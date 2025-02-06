@@ -76,8 +76,10 @@ test.describe('Timezone App', () => {
     });
 
     test('should allow deleting any record except for "You"', async () => {
+         // Known issue: The "You" row should not be deletable, but this test is temporarily disabled due to a bug.
+         // Uncomment and verify once the issue is resolved.
         // const isYouDeletable = await timezonePage.isYouRowDeletable();
-        // expect(isYouDeletable).toBe(false); // "You" row should not be deletable, commented as there is a known bug
+        // expect(isYouDeletable).toBe(false); // The "You" row should not be deletable.
 
         await timezonePage.addTimezone('Test Zone', 'Eastern Standard Time');
         await timezonePage.deleteTimezone('Test Zone');
@@ -86,7 +88,8 @@ test.describe('Timezone App', () => {
         await expect(deletedRow).not.toBeVisible();
     });
 
-    //Below tests are failing due to known issues
+    // Known issue: Sort is not working due to bug
+    // Uncomment and verify once the issue is resolved.
    /* test('should sort the table by current time (earliest first)', async () => {
         const times = await timezonePage.getSortedTimes();
         const isSorted = await timezonePage.isTableSortedByTime();
