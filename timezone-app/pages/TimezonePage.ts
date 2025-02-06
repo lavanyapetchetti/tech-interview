@@ -33,13 +33,21 @@ export class TimezonePage {
         await this.page.goto('http://localhost:3000');
     }
 
+    async getTimezoneTime(timezone: string): Promise<string> {
+        return new Intl.DateTimeFormat('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+            timeZone: timezone
+        }).format(new Date());
+    }
+
     async addTimezone(label: string, standardTimezone: string) {
         await expect(this.addTimezoneButton).toBeVisible();
         await this.addTimezoneButton.click();
         await this.labelInput.fill(label);
-        // Verify if the timezone exists in the dropdown before selecting
-        const availableOptions = await this.timezoneDropdown.locator('option').allInnerTexts();
 
+        const availableOptions = await this.timezoneDropdown.locator('option').allInnerTexts();
         if (!availableOptions.includes(standardTimezone)) {
             console.log(`⚠️ Invalid timezone: "${standardTimezone}" is not in the dropdown options.`);
             return;
@@ -50,29 +58,17 @@ export class TimezonePage {
         await this.page.waitForTimeout(500);
     }
 
-    // async verifyTimezone(label: string, standardTimezone: string) {
-    //     const newRow = this.page.locator(`table tr:has-text("${label}")`);
-    //     await expect(newRow).toBeVisible();
-    //
-    //     // Verify Label
-    //     await expect(newRow.locator('td:nth-child(1)')).toHaveText(label);
-    //
-    //     // Verify Timezone Name
-    //     await expect(newRow.locator('td:nth-child(2)')).toHaveText(new RegExp(`${standardTimezone}|${this.timezoneMap[standardTimezone]}`));
-    //
-    //     // Get the current time in the mapped IANA timezone
-    //     const ianaTimezone = this.timezoneMap[standardTimezone];
-    //     const nowInTimezone = new Intl.DateTimeFormat('en-US', {
-    //         hour: 'numeric',
-    //         minute: '2-digit',
-    //         hour12: true,
-    //         timeZone: ianaTimezone
-    //     }).format(new Date());
-    //
-    //     // Verify Local Time
-    //     await expect(newRow.locator('td:nth-child(3)')).toHaveText(nowInTimezone);
-    //     await this.page.waitForTimeout(500);
-    // }
+    async verifyTimezone(label: string, standardTimezone: string) {
+        const newRow = this.page.locator(`table tr:has-text("${label}")`);
+        await expect(newRow).toBeVisible();
+
+        await expect(newRow.locator('td:nth-child(1)')).toHaveText(label);
+        await expect(newRow.locator('td:nth-child(2)')).toHaveText(new RegExp(`${standardTimezone}|${this.timezoneMap[standardTimezone]}`));
+
+        const nowInTimezone = await this.getTimezoneTime(this.timezoneMap[standardTimezone] || standardTimezone);
+        await expect(newRow.locator('td:nth-child(3)')).toHaveText(nowInTimezone);
+        await this.page.waitForTimeout(500);
+    }
 
     async getSortedTimes(): Promise<string[]> {
         return await this.page.locator('table tbody tr td:nth-child(2)').allTextContents();
@@ -108,42 +104,5 @@ export class TimezonePage {
 
     async getRowCount() {
         return await this.page.locator('table tr').count(); // Counts total rows in the table
-    }
-
-    async verifyTimezone(label: string, standardTimezone: string) {
-        const newRow = this.page.locator(`table tr:has-text("${label}")`);
-        await expect(newRow).toBeVisible();
-
-        // Verify Label
-        await expect(newRow.locator('td:nth-child(1)')).toHaveText(label);
-
-        // Verify Timezone Name
-        await expect(newRow.locator('td:nth-child(2)')).toHaveText(new RegExp(`${standardTimezone}|${this.timezoneMap[standardTimezone]}`));
-
-        // Get expected time using getTimezoneTime
-        const expectedTime = this.getTimezoneTime(standardTimezone);
-
-        // Verify Local Time
-        await expect(newRow.locator('td:nth-child(3)')).toHaveText(expectedTime);
-
-        await this.page.waitForTimeout(500);
-    }
-
-    // Helper function to get the current time in a given timezone
-    getTimezoneTime(standardTimezone: string): string {
-        const ianaTimezone = this.timezoneMap[standardTimezone];
-        return new Intl.DateTimeFormat('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-            timeZone: ianaTimezone
-        }).format(new Date());
-    }
-
-    async simulateDSTChange() {
-        await this.page.evaluate(() => {
-            // Simulate moving clock forward or backward
-            Date.prototype.getTimezoneOffset = () => -240; // DST offset
-        });
     }
 }
