@@ -90,12 +90,6 @@ test.describe('Timezone App', () => {
 
     // Known issue: Sort is not working due to bug
     // Uncomment and verify once the issue is resolved.
-   /* test('should sort the table by current time (earliest first)', async () => {
-        const times = await timezonePage.getSortedTimes();
-        const isSorted = await timezonePage.isTableSortedByTime();
-        expect(isSorted).toBe(true);
-    });
-
     test('should sort the table by current time (earliest first) after adding new timezone', async ({ page }) => {
         const timezonePage = new TimezonePage(page);
 
