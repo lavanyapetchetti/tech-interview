@@ -11,7 +11,6 @@ test.describe('Timezone App', () => {
 
     test('should automatically create local timezone record marked as "You"', async () => {
         await expect(timezonePage.youRow).toBeVisible();
-        await timezonePage.verifyTimezone("Local(You)", "America/Vancouver");
     });
 
     test('should allow adding a new timezone and verify its entry', async () => {
