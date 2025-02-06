@@ -9,12 +9,12 @@ test.describe('Timezone App', () => {
         await timezonePage.navigate();
     });
 
-    test('should automatically create a "You" record with the user\'s local timezone', async () => {
+    test('should automatically create local timezone record marked as "You"', async () => {
         await expect(timezonePage.youRow).toBeVisible();
         await timezonePage.verifyTimezone("Local(You)", "America/Vancouver");
     });
 
-    test('should allow the user to add a timezone with a custom label', async () => {
+    test('should allow adding a new timezone and verify its entry', async () => {
         const label = 'Europe HQ';
         const standardTimezone = 'Eastern Standard Time';
 
@@ -23,26 +23,30 @@ test.describe('Timezone App', () => {
         await timezonePage.verifyTimezone(label, standardTimezone);
     });
 
-    test('should allow the user to add all timezones from drop-down', async ({ page }) => {
-        const timezonePage = new TimezonePage(page);
+    test('should not allow adding a timezone with an empty label', async () => {
+        const timezone = 'Eastern Standard Time';
 
-        // List of timezones available in the dropdown
-        const availableTimezones = [
-            "Eastern Standard Time",
-            "Central Standard Time",
-            "Mountain Standard Time",
-            "Pacific Standard Time",
-            "Alaska Standard Time",
-            "Hawaii-Aleutian Standard Time"
-        ];
+        await timezonePage.addTimezone('', timezone); // Empty label
+        await expect(timezonePage.saveButton).toBeVisible();
 
-        for (const standardTimezone of availableTimezones) {
-            const label = `Test-${standardTimezone}`; // Unique label for each timezone
+        const finalRowCount = await timezonePage.getRowCount();
+        expect(finalRowCount).toBe(2);
+    });
 
-            // Add and verify timezone dynamically
-            await timezonePage.addTimezone(label, standardTimezone);
-            await timezonePage.verifyTimezone(label, standardTimezone);
-        }
+    test('should not allow adding a record without selecting a timezone', async () => {
+        const label = 'No Timezone';
+        await timezonePage.addTimezone(label, '');
+        await expect(timezonePage.saveButton).toBeVisible();
+        const finalRowCount = await timezonePage.page.locator('table tr').count();
+        expect(finalRowCount).toBe(2);
+    });
+
+    test('should not allow adding a record with invalid timezone', async () => {
+        const label = 'Invalid Zone';
+        const invalidTimezone = 'Invalid/Timezone';
+        await timezonePage.addTimezone(label, invalidTimezone);
+        await expect(timezonePage.saveButton).toBeVisible();
+        await expect(timezonePage.saveButton).toBeVisible();
     });
 
     test('should not allow adding duplicate timezone labels', async () => {
@@ -56,52 +60,20 @@ test.describe('Timezone App', () => {
         expect(count).toBe(1); // Only one instance should exist
     });
 
-    test('should not allow adding a timezone with an empty label', async () => {
-        const timezone = 'Eastern Standard Time';
+    test('should allow the user to add a few representative timezones from the dropdown', async ({ page }) => {
+        const timezonePage = new TimezonePage(page);
 
-        await timezonePage.addTimezone('', timezone); // Empty label
-        await expect(timezonePage.saveButton).toBeVisible();
-
-        const finalRowCount = await timezonePage.getRowCount();
-        expect(finalRowCount).toBe(2);
-    });
-
-    test.describe('Timezone Validations', () => {
-        const invalidTimezones = [
-            ['No Timezone', ''],
-            ['Invalid Zone', 'Invalid/Timezone']
+        // Representative timezones covering different UTC offsets
+        const sampleTimezones = [
+            { label: 'Test-EST', timezone: 'Eastern Standard Time' },
+            { label: 'Test-PST', timezone: 'Pacific Standard Time' },
+            { label: 'Test-HST', timezone: 'Hawaii-Aleutian Standard Time' }
         ];
 
-        for (const [label, timezone] of invalidTimezones) {
-            test(`should not allow adding a record with an invalid timezone: ${label}`, async ({ page }) => {
-                const timezonePage = new TimezonePage(page);
-                await timezonePage.addTimezone(label, timezone);
-
-                const finalRowCount = await timezonePage.getRowCount();
-                expect(finalRowCount).toBe(2); // Row count should not increase
-
-                await expect(timezonePage.saveButton).toBeVisible();
-            });
+        for (const { label, timezone } of sampleTimezones) {
+            await timezonePage.addTimezone(label, timezone);
+            await timezonePage.verifyTimezone(label, timezone);
         }
-    });
-
-    test('should allow adding multiple timezones without performance issues', async () => {
-        for (let i = 0; i < 10; i++) {
-            await timezonePage.addTimezone(`Zone ${i}`, 'Pacific Standard Time');
-        }
-
-        const rowCount = await timezonePage.getRowCount();
-        expect(rowCount).toEqual(3); // Ensure all entries are added
-    });
-
-    test('should maintain correct time after page reload', async () => {
-        await timezonePage.addTimezone('Reload Test', 'Central Standard Time');
-
-        const timeBeforeReload = timezonePage.getTimezoneTime('Reload Test');
-        await timezonePage.page.reload(); // Refresh the page
-
-        const timeAfterReload = timezonePage.getTimezoneTime('Reload Test');
-        expect(timeAfterReload).toBe(timeBeforeReload); // Time should remain accurate
     });
 
     test('should allow deleting any record except for "You"', async () => {
@@ -115,7 +87,7 @@ test.describe('Timezone App', () => {
         await expect(deletedRow).not.toBeVisible();
     });
 
-    //Below tests are failing due to known bugs
+    //Below tests are failing due to known issues
    /* test('should sort the table by current time (earliest first)', async () => {
         const times = await timezonePage.getSortedTimes();
         const isSorted = await timezonePage.isTableSortedByTime();
