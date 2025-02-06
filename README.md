@@ -7,7 +7,7 @@ Before running the project, clone the repository to your local machine:
 
 ```bash
 git clone https://github.com/lavanyapetchetti/tech-interview.git
-cd tech-interview
+cd tech-interview/timezone-app
 ```
 
 Next, run the development server:
@@ -27,7 +27,6 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 To run tests, ensure that the development server is running in background. Then, run `npm run e2e` or `yarn e2e` to execute tests. If this is your first time running Playwright tests, you should run `npx playwright install` or `yarn playwright install` to install browser binaries.
 
 ```
-cd tech-interview/timezone-app
 npx playwright install
 npm run e2e
 ```
